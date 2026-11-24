@@ -33,6 +33,25 @@
     <form id="selForm">
         <div class="form-grid">
             <div class="full-width">
+                <label>Condutor (acompanhando a selagem)</label>
+                <select id="condutor" required>
+                    <option value="">-- Selecione --</option>
+                    <option value="Adriano Nascimento">Adriano Nascimento</option>
+                    <option value="Ezequiel Almeida">Ezequiel Almeida</option>
+                    <option value="Francivaldo Costa">Francivaldo Costa</option>
+                    <option value="Jeiel Lobato">Jeiel Lobato</option>
+                    <option value="Joelcinei Guimarães">Joelcinei Guimarães</option>
+                    <option value="Lafaiete de Souza">Lafaiete de Souza</option>
+                    <option value="Reginaldo Pereira">Reginaldo Pereira</option>
+                </select>
+            </div>
+
+            <div class="full-width">
+                <label>TST (responsável pela selagem)</label>
+                <input type="text" id="tst" value="Jean Soares" readonly>
+            </div>
+
+            <div class="full-width">
                 <label>Veículo (TAG)</label>
                 <select id="selectTag" required onchange="atualizarDadosVeiculo()">
                     <option value="">-- Selecione --</option>
@@ -56,12 +75,8 @@
                 <input type="text" id="km_atual" inputmode="numeric" required oninput="mascaraKM(this); calcularTudo()">
             </div>
 
-            <div>
-                <label>Última troca de óleo (data)</label>
-                <input type="date" id="data_troca" required>
-            </div>
-            <div>
-                <label>Próxima troca (KM)</label>
+            <div class="full-width">
+                <label>Próxima troca de óleo (KM)</label>
                 <input type="text" id="prox_oleo" inputmode="numeric" required oninput="mascaraKM(this); calcularTudo()">
                 <span id="calc_oleo" class="status-calc"></span>
             </div>
@@ -175,6 +190,10 @@
         t += `🚘 *${$('selectTag').value}* - ${$('placa').value}\n`;
         t += `${dataHora}\n${sep}\n`;
 
+        t += `👨‍✈️ *CONDUTOR*\n`;
+        t += `*Nome:* ${$('condutor').value}\n`;
+        t += `🦺 *TST:* ${$('tst').value}\n${sep}\n`;
+
         t += `📄 *LICENCIAMENTO*\n`;
         t += `*Vencimento:* ${formatarData($('licenciamento').value)}\n`;
         t += `*Status:* ${$('calc_lic').innerText}\n${sep}\n`;
@@ -183,7 +202,6 @@
         t += `*KM Atual:* ${$('km_atual').value} km\n${sep}\n`;
 
         t += `🛢️ *ÓLEO*\n`;
-        t += `*Última troca:* ${formatarData($('data_troca').value)}\n`;
         t += `*Próx. troca:* ${$('prox_oleo').value} km\n`;
         t += `*Status:* ${$('calc_oleo').innerText}\n${sep}\n`;
 
