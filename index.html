@@ -66,7 +66,7 @@
             <div><label>Placa</label><input type="text" id="placa" readonly></div>
             <div>
                 <label>Licenciamento (vencimento)</label>
-                <input type="date" id="licenciamento" required onchange="calcularTudo()">
+                <input type="text" inputmode="numeric" placeholder="dd/mm/aaaa" maxlength="10" pattern="\d{2}/\d{2}/\d{4}" title="Use o formato dd/mm/aaaa" required id="licenciamento" oninput="mascaraData(this); calcularTudo()">
                 <span id="calc_lic" class="status-calc"></span>
             </div>
 
@@ -77,7 +77,7 @@
 
             <div>
                 <label>Última troca de óleo (data)</label>
-                <input type="date" id="data_troca" required>
+                <input type="text" inputmode="numeric" placeholder="dd/mm/aaaa" maxlength="10" pattern="\d{2}/\d{2}/\d{4}" title="Use o formato dd/mm/aaaa" required id="data_troca" oninput="mascaraData(this)">
             </div>
             <div>
                 <label>Próxima troca (KM)</label>
@@ -97,13 +97,13 @@
             </div>
             <div>
                 <label>Vencimento do Selo</label>
-                <input type="date" id="val_selo" required onchange="calcularTudo()">
+                <input type="text" inputmode="numeric" placeholder="dd/mm/aaaa" maxlength="10" pattern="\d{2}/\d{2}/\d{4}" title="Use o formato dd/mm/aaaa" required id="val_selo" oninput="mascaraData(this); calcularTudo()">
                 <span id="calc_selo" class="status-calc"></span>
             </div>
 
             <div class="full-width">
                 <label>Validade do Extintor</label>
-                <input type="date" id="val_extintor" required onchange="calcularTudo()">
+                <input type="text" inputmode="numeric" placeholder="dd/mm/aaaa" maxlength="10" pattern="\d{2}/\d{2}/\d{4}" title="Use o formato dd/mm/aaaa" required id="val_extintor" oninput="mascaraData(this); calcularTudo()">
                 <span id="calc_ext" class="status-calc"></span>
             </div>
         </div>
@@ -137,7 +137,25 @@
 
     function mascaraKM(el) { el.value = formatarKM(el.value); }
 
-    function formatarData(v) { return v ? v.split('-').reverse().join('/') : ""; }
+    // Máscara dd/mm/aaaa enquanto digita
+    function mascaraData(el) {
+        const n = el.value.replace(/\D/g, '').slice(0, 8);
+        let t = n;
+        if (n.length > 4) t = n.slice(0, 2) + '/' + n.slice(2, 4) + '/' + n.slice(4);
+        else if (n.length > 2) t = n.slice(0, 2) + '/' + n.slice(2);
+        el.value = t;
+        el.setCustomValidity(t.length === 10 && !brParaISO(t) ? 'Data inválida' : '');
+    }
+
+    // Converte dd/mm/aaaa em aaaa-mm-dd (vazio se for inválida)
+    function brParaISO(v) {
+        const m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(v || '');
+        if (!m) return '';
+        const d = +m[1], mes = +m[2], a = +m[3];
+        const dt = new Date(a, mes - 1, d);
+        if (dt.getFullYear() !== a || dt.getMonth() !== mes - 1 || dt.getDate() !== d) return '';
+        return `${m[3]}-${m[2]}-${m[1]}`;
+    }
 
     function diasAte(dataISO) {
         const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
@@ -165,7 +183,8 @@
 
     function calcularTudo() {
         [['licenciamento', 'calc_lic', 30], ['val_selo', 'calc_selo', 10], ['val_extintor', 'calc_ext', 30]].forEach(([campo, saida, alerta]) => {
-            if ($(campo).value) mostrar(saida, statusData($(campo).value, alerta));
+            const iso = brParaISO($(campo).value);
+            if (iso) mostrar(saida, statusData(iso, alerta));
             else $(saida).innerText = "";
         });
         const o = statusOleo();
@@ -199,26 +218,51 @@
         t += `🦺 *TST:* ${$('tst').value}\n${sep}\n`;
 
         t += `📄 *LICENCIAMENTO*\n`;
-        t += `*Vencimento:* ${formatarData($('licenciamento').value)}\n`;
+        t += `*Vencimento:* ${$('licenciamento').value}\n`;
         t += `*Status:* ${$('calc_lic').innerText}\n${sep}\n`;
 
         t += `🛣️ *QUILOMETRAGEM*\n`;
         t += `*KM Atual:* ${$('km_atual').value} km\n${sep}\n`;
 
         t += `🛢️ *ÓLEO*\n`;
-        t += `*Última troca:* ${formatarData($('data_troca').value)}\n`;
+        t += `*Última troca:* ${$('data_troca').value}\n`;
         t += `*Próx. troca:* ${$('prox_oleo').value} km\n`;
         t += `*Status:* ${$('calc_oleo').innerText}\n${sep}\n`;
 
         t += `🔖 *SELO*\n`;
         t += `*Cor:* ${cores[cor.toUpperCase()] || '⚪'} ${cor}\n`;
-        t += `*Vencimento:* ${formatarData($('val_selo').value)}\n`;
+        t += `*Vencimento:* ${$('val_selo').value}\n`;
         t += `*Status:* ${$('calc_selo').innerText}\n${sep}\n`;
 
         t += `🧯 *EXTINTOR*\n`;
-        t += `*Validade:* ${formatarData($('val_extintor').value)}\n`;
+        t += `*Validade:* ${$('val_extintor').value}\n`;
         t += `*Status:* ${$('calc_ext').innerText}`;
         return t;
+    }
+
+    // Cole aqui a URL do app da web gerada no Apps Script (termina em /exec)
+    const URL_PLANILHA = "COLE_AQUI_A_URL_DO_APP_DA_WEB";
+
+    function enviarPlanilha() {
+        const dados = {
+            condutor: $('condutor').value,
+            tst: $('tst').value,
+            veiculo: $('selectTag').value,
+            placa: $('placa').value,
+            licenciamento: brParaISO($('licenciamento').value),
+            km_atual: limparKM($('km_atual').value),
+            data_troca: brParaISO($('data_troca').value),
+            prox_oleo: limparKM($('prox_oleo').value),
+            cor_selo: $('cor_selo').value,
+            val_selo: brParaISO($('val_selo').value),
+            val_extintor: brParaISO($('val_extintor').value)
+        };
+        return fetch(URL_PLANILHA, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify(dados)
+        });
     }
 
     function enviarWhatsapp() {
@@ -226,10 +270,14 @@
         if (!f.checkValidity()) return f.reportValidity();
         calcularTudo();
         window.open("https://wa.me/?text=" + encodeURIComponent(montarTexto()), '_blank');
+        if (URL_PLANILHA.startsWith("http")) {
+            enviarPlanilha().catch(() => alert("Não foi possível salvar na planilha. Verifique a conexão."));
+        }
     }
 
     function limparForm() {
         $('selForm').reset();
+        document.querySelectorAll('input').forEach(e => e.setCustomValidity(''));
         document.querySelectorAll('.status-calc').forEach(e => e.innerText = "");
     }
 </script>
