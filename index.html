@@ -1,1 +1,212 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Telejur - Dados de Selagem</title>
+    <style>
+        :root { --primary: #2c3e50; --accent: #3498db; --success: #25D366; }
+        body { font-family: 'Segoe UI', sans-serif; background-color: #f4f7f6; margin: 0; padding: 15px; display: flex; justify-content: center; }
+        .container { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 100%; max-width: 500px; }
+        .brand-header { text-align: center; margin-bottom: 20px; }
+        .brand-header h1 { color: var(--primary); margin: 0; font-size: 28px; letter-spacing: 1px; text-transform: uppercase; }
+        .brand-header p { color: var(--accent); margin: 0; font-size: 14px; font-weight: bold; }
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .full-width { grid-column: span 2; }
+        label { display: block; font-weight: bold; margin-bottom: 4px; color: var(--primary); font-size: 13px; }
+        select, input { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; font-size: 15px; }
+        input[readonly] { background: #f2f2f2; }
+        .btn { width: 100%; padding: 15px; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 16px; margin-top: 12px; }
+        .btn-whatsapp { background: var(--success); }
+        .btn-limpar { background: #95a5a6; margin-top: 8px; }
+        .status-calc { font-size: 11px; font-weight: bold; margin-top: 4px; display: block; min-height: 14px; }
+    </style>
+</head>
+<body>
 
+<div class="container">
+    <div class="brand-header">
+        <h1>Telejur</h1>
+        <p>DADOS DE SELAGEM</p>
+    </div>
+
+    <form id="selForm">
+        <div class="form-grid">
+            <div class="full-width">
+                <label>Veículo (TAG)</label>
+                <select id="selectTag" required onchange="atualizarDadosVeiculo()">
+                    <option value="">-- Selecione --</option>
+                    <option value="TJUR 07">TJUR 07 - SKY MUNCK</option>
+                    <option value="TJUR 08">TJUR 08 - CAMINHONETE</option>
+                    <option value="TJUR 09">TJUR 09 - SKY MUNCK</option>
+                    <option value="TJUR 13">TJUR 13 - CAMINHONETE</option>
+                    <option value="TJUR 14">TJUR 14 - CAMINHONETE</option>
+                </select>
+            </div>
+
+            <div><label>Placa</label><input type="text" id="placa" readonly></div>
+            <div>
+                <label>Licenciamento (vencimento)</label>
+                <input type="date" id="licenciamento" required onchange="calcularTudo()">
+                <span id="calc_lic" class="status-calc"></span>
+            </div>
+
+            <div class="full-width">
+                <label>KM Atual</label>
+                <input type="text" id="km_atual" inputmode="numeric" required oninput="mascaraKM(this); calcularTudo()">
+            </div>
+
+            <div>
+                <label>Última troca de óleo (data)</label>
+                <input type="date" id="data_troca" required>
+            </div>
+            <div>
+                <label>Próxima troca (KM)</label>
+                <input type="text" id="prox_oleo" inputmode="numeric" required oninput="mascaraKM(this); calcularTudo()">
+                <span id="calc_oleo" class="status-calc"></span>
+            </div>
+
+            <div>
+                <label>Cor do Selo</label>
+                <select id="cor_selo" required>
+                    <option value="Verde">Verde</option>
+                    <option value="Amarelo">Amarelo</option>
+                    <option value="Azul">Azul</option>
+                    <option value="Vermelho">Vermelho</option>
+                </select>
+            </div>
+            <div>
+                <label>Vencimento do Selo</label>
+                <input type="date" id="val_selo" required onchange="calcularTudo()">
+                <span id="calc_selo" class="status-calc"></span>
+            </div>
+
+            <div class="full-width">
+                <label>Validade do Extintor</label>
+                <input type="date" id="val_extintor" required onchange="calcularTudo()">
+                <span id="calc_ext" class="status-calc"></span>
+            </div>
+        </div>
+
+        <button type="button" class="btn btn-whatsapp" onclick="enviarWhatsapp()">ENVIAR POR WHATSAPP</button>
+        <button type="button" class="btn btn-limpar" onclick="limparForm()">LIMPAR</button>
+    </form>
+</div>
+
+<script>
+    const frota = {
+        "TJUR 07": { placa: "RWR3C75", cor: "Verde", prox: "35000",  selo: "2026-11-30" },
+        "TJUR 08": { placa: "QVE5H48", cor: "Azul",  prox: "182018", selo: "2026-12-31" },
+        "TJUR 09": { placa: "RXC6J04", cor: "Verde", prox: "45884",  selo: "2026-11-30" },
+        "TJUR 13": { placa: "QVD4I38", cor: "Verde", prox: "184696", selo: "2026-11-30" },
+        "TJUR 14": { placa: "QVJ5J56", cor: "Azul",  prox: "133025", selo: "2026-12-31" }
+    };
+
+    const $ = (id) => document.getElementById(id);
+
+    function limparKM(v) {
+        if (!v) return 0;
+        const n = parseFloat(v.toString().replace(/\./g, '').replace(',', '.'));
+        return isNaN(n) ? 0 : n;
+    }
+
+    function formatarKM(v) {
+        if (v === null || v === undefined || v === "") return "";
+        return v.toString().replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+    }
+
+    function mascaraKM(el) { el.value = formatarKM(el.value); }
+
+    function formatarData(v) { return v ? v.split('-').reverse().join('/') : ""; }
+
+    function diasAte(dataISO) {
+        const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
+        return Math.ceil((new Date(dataISO + "T00:00:00") - hoje) / 86400000);
+    }
+
+    function statusData(dataISO, limiteAlerta) {
+        const d = diasAte(dataISO);
+        if (d <= 0) return { txt: "🔴 VENCIDO!", cor: "red" };
+        if (d <= limiteAlerta) return { txt: `⚠️ Vence em ${d} dias`, cor: "orange" };
+        return { txt: `✅ Vence em ${d} dias`, cor: "green" };
+    }
+
+    function mostrar(id, st) { $(id).innerText = st.txt; $(id).style.color = st.cor; }
+
+    function statusOleo() {
+        const km = limparKM($('km_atual').value);
+        const prox = limparKM($('prox_oleo').value);
+        if (!km || !prox) return null;
+        const saldo = Math.round(prox - km);
+        if (saldo <= 0) return { txt: `🔴 Troca vencida há ${formatarKM(Math.abs(saldo))} KM`, cor: "red" };
+        if (saldo <= 1000) return { txt: `⚠️ Trocar em ${formatarKM(saldo)} KM`, cor: "orange" };
+        return { txt: `✅ Restam ${formatarKM(saldo)} KM`, cor: "green" };
+    }
+
+    function calcularTudo() {
+        if ($('licenciamento').value) mostrar('calc_lic', statusData($('licenciamento').value, 30));
+        if ($('val_selo').value) mostrar('calc_selo', statusData($('val_selo').value, 10));
+        if ($('val_extintor').value) mostrar('calc_ext', statusData($('val_extintor').value, 30));
+        const o = statusOleo();
+        if (o) mostrar('calc_oleo', o); else $('calc_oleo').innerText = "";
+    }
+
+    function atualizarDadosVeiculo() {
+        const v = frota[$('selectTag').value];
+        if (!v) return;
+        $('placa').value = v.placa;
+        $('cor_selo').value = v.cor;
+        $('prox_oleo').value = formatarKM(v.prox);
+        $('val_selo').value = v.selo;
+        calcularTudo();
+    }
+
+    function montarTexto() {
+        const sep = "───────────────";
+        const cores = { VERDE: '🟢', AMARELO: '🟡', AZUL: '🔵', VERMELHO: '🔴' };
+        const cor = $('cor_selo').value;
+        const agora = new Date();
+        const dataHora = agora.toLocaleDateString('pt-BR') + " | " +
+            agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
+        let t = `🔖 *DADOS DE SELAGEM*\n\n`;
+        t += `🚘 *${$('selectTag').value}* - ${$('placa').value}\n`;
+        t += `${dataHora}\n${sep}\n`;
+
+        t += `📄 *LICENCIAMENTO*\n`;
+        t += `*Vencimento:* ${formatarData($('licenciamento').value)}\n`;
+        t += `*Status:* ${$('calc_lic').innerText}\n${sep}\n`;
+
+        t += `🛣️ *QUILOMETRAGEM*\n`;
+        t += `*KM Atual:* ${$('km_atual').value} km\n${sep}\n`;
+
+        t += `🛢️ *ÓLEO*\n`;
+        t += `*Última troca:* ${formatarData($('data_troca').value)}\n`;
+        t += `*Próx. troca:* ${$('prox_oleo').value} km\n`;
+        t += `*Status:* ${$('calc_oleo').innerText}\n${sep}\n`;
+
+        t += `🔖 *SELO*\n`;
+        t += `*Cor:* ${cores[cor.toUpperCase()] || '⚪'} ${cor}\n`;
+        t += `*Vencimento:* ${formatarData($('val_selo').value)}\n`;
+        t += `*Status:* ${$('calc_selo').innerText}\n${sep}\n`;
+
+        t += `🧯 *EXTINTOR*\n`;
+        t += `*Validade:* ${formatarData($('val_extintor').value)}\n`;
+        t += `*Status:* ${$('calc_ext').innerText}`;
+        return t;
+    }
+
+    function enviarWhatsapp() {
+        const f = $('selForm');
+        if (!f.checkValidity()) return f.reportValidity();
+        calcularTudo();
+        window.open("https://wa.me/?text=" + encodeURIComponent(montarTexto()), '_blank');
+    }
+
+    function limparForm() {
+        $('selForm').reset();
+        document.querySelectorAll('.status-calc').forEach(e => e.innerText = "");
+    }
+</script>
+</body>
+</html>
