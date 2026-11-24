@@ -1,1 +1,1 @@
-# Telejur---Dados-de-Selagem
+# Telejur-Dados-de-Selagem
