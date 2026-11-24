@@ -19,6 +19,24 @@
         .btn { width: 100%; padding: 15px; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 16px; margin-top: 12px; }
         .btn-whatsapp { background: var(--success); }
         .btn-limpar { background: #95a5a6; margin-top: 8px; }
+        .campo-data { position: relative; }
+        .campo-data input[type="text"] { padding-right: 48px; }
+        .btn-cal { position: absolute; right: 0; top: 0; bottom: 0; width: 46px; border: none; background: transparent; font-size: 20px; cursor: pointer; }
+        .campo-data input[type="text"] { cursor: pointer; }
+        .cal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 1000; align-items: center; justify-content: center; padding: 15px; }
+        .cal-overlay.aberto { display: flex; }
+        .cal-card { background: #fff; border-radius: 12px; padding: 14px; width: 100%; max-width: 320px; box-shadow: 0 8px 30px rgba(0,0,0,0.3); }
+        .cal-topo { display: flex; gap: 6px; align-items: center; margin-bottom: 10px; }
+        .cal-topo select { width: auto; flex: 1; padding: 8px; font-size: 14px; }
+        .cal-nav { border: none; background: #eef2f5; border-radius: 6px; width: 36px; height: 36px; font-size: 20px; cursor: pointer; }
+        .cal-semana, .cal-dias { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; text-align: center; }
+        .cal-semana span { font-size: 11px; font-weight: bold; color: #7f8c8d; padding: 4px 0; }
+        .cal-dia { border: 1px solid transparent; background: transparent; padding: 10px 0; border-radius: 6px; font-size: 14px; cursor: pointer; }
+        .cal-dia:hover { background: #eef2f5; }
+        .cal-dia.hoje { border-color: var(--accent); }
+        .cal-dia.sel { background: var(--accent); color: #fff; }
+        .cal-rodape { display: flex; justify-content: space-between; margin-top: 10px; }
+        .cal-rodape button { border: none; background: none; color: var(--accent); font-weight: bold; cursor: pointer; padding: 8px; font-size: 14px; }
         .status-calc { font-size: 11px; font-weight: bold; margin-top: 4px; display: block; min-height: 14px; }
     </style>
 </head>
@@ -66,7 +84,10 @@
             <div><label>Placa</label><input type="text" id="placa" readonly></div>
             <div>
                 <label>Licenciamento (vencimento)</label>
-                <input type="text" inputmode="numeric" placeholder="dd/mm/aaaa" maxlength="10" pattern="\d{2}/\d{2}/\d{4}" title="Use o formato dd/mm/aaaa" required id="licenciamento" oninput="mascaraData(this); calcularTudo()">
+                <div class="campo-data">
+                    <input type="text" inputmode="none" placeholder="dd/mm/aaaa" maxlength="10" pattern="\d{2}/\d{2}/\d{4}" title="Use o formato dd/mm/aaaa" required id="licenciamento" onclick="abrirCalendario('licenciamento')" oninput="mascaraData(this); calcularTudo()">
+                    <button type="button" class="btn-cal" onclick="abrirCalendario('licenciamento')" aria-label="Abrir calendário">📅</button>
+                </div>
                 <span id="calc_lic" class="status-calc"></span>
             </div>
 
@@ -77,7 +98,10 @@
 
             <div>
                 <label>Última troca de óleo (data)</label>
-                <input type="text" inputmode="numeric" placeholder="dd/mm/aaaa" maxlength="10" pattern="\d{2}/\d{2}/\d{4}" title="Use o formato dd/mm/aaaa" required id="data_troca" oninput="mascaraData(this)">
+                <div class="campo-data">
+                    <input type="text" inputmode="none" placeholder="dd/mm/aaaa" maxlength="10" pattern="\d{2}/\d{2}/\d{4}" title="Use o formato dd/mm/aaaa" required id="data_troca" onclick="abrirCalendario('data_troca')" oninput="mascaraData(this)">
+                    <button type="button" class="btn-cal" onclick="abrirCalendario('data_troca')" aria-label="Abrir calendário">📅</button>
+                </div>
             </div>
             <div>
                 <label>Próxima troca (KM)</label>
@@ -97,13 +121,19 @@
             </div>
             <div>
                 <label>Vencimento do Selo</label>
-                <input type="text" inputmode="numeric" placeholder="dd/mm/aaaa" maxlength="10" pattern="\d{2}/\d{2}/\d{4}" title="Use o formato dd/mm/aaaa" required id="val_selo" oninput="mascaraData(this); calcularTudo()">
+                <div class="campo-data">
+                    <input type="text" inputmode="none" placeholder="dd/mm/aaaa" maxlength="10" pattern="\d{2}/\d{2}/\d{4}" title="Use o formato dd/mm/aaaa" required id="val_selo" onclick="abrirCalendario('val_selo')" oninput="mascaraData(this); calcularTudo()">
+                    <button type="button" class="btn-cal" onclick="abrirCalendario('val_selo')" aria-label="Abrir calendário">📅</button>
+                </div>
                 <span id="calc_selo" class="status-calc"></span>
             </div>
 
             <div class="full-width">
                 <label>Validade do Extintor</label>
-                <input type="text" inputmode="numeric" placeholder="dd/mm/aaaa" maxlength="10" pattern="\d{2}/\d{2}/\d{4}" title="Use o formato dd/mm/aaaa" required id="val_extintor" oninput="mascaraData(this); calcularTudo()">
+                <div class="campo-data">
+                    <input type="text" inputmode="none" placeholder="dd/mm/aaaa" maxlength="10" pattern="\d{2}/\d{2}/\d{4}" title="Use o formato dd/mm/aaaa" required id="val_extintor" onclick="abrirCalendario('val_extintor')" oninput="mascaraData(this); calcularTudo()">
+                    <button type="button" class="btn-cal" onclick="abrirCalendario('val_extintor')" aria-label="Abrir calendário">📅</button>
+                </div>
                 <span id="calc_ext" class="status-calc"></span>
             </div>
         </div>
@@ -111,6 +141,23 @@
         <button type="button" class="btn btn-whatsapp" onclick="enviarWhatsapp()">ENVIAR POR WHATSAPP</button>
         <button type="button" class="btn btn-limpar" onclick="limparForm()">LIMPAR</button>
     </form>
+</div>
+
+<div id="calOverlay" class="cal-overlay" onclick="if (event.target === this) fecharCalendario()">
+    <div class="cal-card" role="dialog" aria-label="Escolher data">
+        <div class="cal-topo">
+            <button type="button" class="cal-nav" onclick="mudarMes(-1)" aria-label="Mês anterior">‹</button>
+            <select id="calMes" onchange="renderCalendario()"></select>
+            <select id="calAno" onchange="renderCalendario()"></select>
+            <button type="button" class="cal-nav" onclick="mudarMes(1)" aria-label="Próximo mês">›</button>
+        </div>
+        <div class="cal-semana"><span>Dom</span><span>Seg</span><span>Ter</span><span>Qua</span><span>Qui</span><span>Sex</span><span>Sáb</span></div>
+        <div id="calDias" class="cal-dias"></div>
+        <div class="cal-rodape">
+            <button type="button" onclick="escolherHoje()">Hoje</button>
+            <button type="button" onclick="fecharCalendario()">Cancelar</button>
+        </div>
+    </div>
 </div>
 
 <script>
@@ -156,6 +203,88 @@
         if (dt.getFullYear() !== a || dt.getMonth() !== mes - 1 || dt.getDate() !== d) return '';
         return `${m[3]}-${m[2]}-${m[1]}`;
     }
+
+    // ===== Calendário em português (semana começa no domingo) =====
+    const MESES = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+    let calCampo = null;
+
+    const pad2 = (n) => String(n).padStart(2, '0');
+
+    function hojeISO() {
+        const h = new Date();
+        return `${h.getFullYear()}-${pad2(h.getMonth() + 1)}-${pad2(h.getDate())}`;
+    }
+
+    function garantirAno(a) {
+        const sel = $('calAno');
+        if (![...sel.options].some(o => +o.value === a)) {
+            sel.add(new Option(a, a));
+            [...sel.options].sort((x, y) => x.value - y.value).forEach(o => sel.add(o));
+        }
+    }
+
+    function abrirCalendario(id) {
+        calCampo = id;
+        const iso = brParaISO($(id).value);
+        const base = iso ? new Date(iso + 'T00:00:00') : new Date();
+        const anoAtual = new Date().getFullYear();
+
+        $('calMes').innerHTML = MESES.map((m, i) => `<option value="${i}">${m}</option>`).join('');
+        let anos = '';
+        for (let a = anoAtual - 5; a <= anoAtual + 15; a++) anos += `<option value="${a}">${a}</option>`;
+        $('calAno').innerHTML = anos;
+
+        garantirAno(base.getFullYear());
+        $('calMes').value = base.getMonth();
+        $('calAno').value = base.getFullYear();
+        renderCalendario();
+        $('calOverlay').classList.add('aberto');
+    }
+
+    function renderCalendario() {
+        const m = +$('calMes').value, a = +$('calAno').value;
+        const primeiroDia = new Date(a, m, 1).getDay();
+        const totalDias = new Date(a, m + 1, 0).getDate();
+        const selecionado = calCampo ? brParaISO($(calCampo).value) : '';
+        const hoje = hojeISO();
+
+        let html = '';
+        for (let i = 0; i < primeiroDia; i++) html += '<span></span>';
+        for (let d = 1; d <= totalDias; d++) {
+            const iso = `${a}-${pad2(m + 1)}-${pad2(d)}`;
+            const cls = (iso === selecionado ? ' sel' : '') + (iso === hoje ? ' hoje' : '');
+            html += `<button type="button" class="cal-dia${cls}" onclick="escolherDia('${iso}')">${d}</button>`;
+        }
+        $('calDias').innerHTML = html;
+    }
+
+    function mudarMes(delta) {
+        let m = +$('calMes').value + delta, a = +$('calAno').value;
+        if (m < 0) { m = 11; a--; }
+        if (m > 11) { m = 0; a++; }
+        garantirAno(a);
+        $('calMes').value = m;
+        $('calAno').value = a;
+        renderCalendario();
+    }
+
+    function escolherDia(iso) {
+        if (!calCampo) return;
+        const campo = $(calCampo);
+        campo.value = iso.split('-').reverse().join('/');
+        campo.setCustomValidity('');
+        fecharCalendario();
+        calcularTudo();
+    }
+
+    function escolherHoje() { escolherDia(hojeISO()); }
+
+    function fecharCalendario() {
+        $('calOverlay').classList.remove('aberto');
+        calCampo = null;
+    }
+
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') fecharCalendario(); });
 
     function diasAte(dataISO) {
         const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
